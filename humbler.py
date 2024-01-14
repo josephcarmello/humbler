@@ -20,6 +20,8 @@ last_position = 0
 last_inode = 0
 last_size = 0
 
+processed_lines = set()
+
 async def read_json_file(file_path):
     async with aiofiles.open(file_path, 'r') as file:
         content = await file.read()
@@ -41,22 +43,25 @@ async def load_user_whitelist():
     return '|'.join(map(re.escape, whitelist_names))
 
 async def process_log_line(line):
-    print(f"Found matching line in log: {line.strip()}")
-    payload = {'content': line.strip()}
-    await write_to_discord_webhook(payload)
+    if line not in processed_lines:
+        print(f"Found matching line in log: {line.strip()}")
+        payload = {'content': line.strip()}
+        await write_to_discord_webhook(payload)
+        processed_lines.add(line)
 
 async def follow_log():
-    global last_position, last_inode, last_size
+    global last_position, last_inode, last_size, processed_lines
     while True:
         try:
             current_inode = os.stat(log_file_path).st_ino
             current_size = os.stat(log_file_path).st_size
 
             if last_inode != current_inode or last_size > current_size:
-                # File has been rotated or truncated, reset position to end of the file
+                # File has been rotated or truncated, reset position and processed lines
                 last_position = current_size
                 last_inode = current_inode
                 last_size = current_size
+                processed_lines = set()  # Reset processed lines
                 await asyncio.sleep(1)  # Sleep to avoid rapid checking :(
 
             async with aiofiles.open(log_file_path, 'r') as log_file:
@@ -80,8 +85,9 @@ async def follow_log():
                 last_size = current_size
 
         except FileNotFoundError:
-            # Log file not found, reset position to the end of the file
+            # Log file not found, reset position and processed lines
             last_position = 0
+            processed_lines = set()  # Reset processed lines
             await asyncio.sleep(1)  # Sleep to avoid rapid checking - computer is fast
         except Exception as e:
             print(f"Error: {e}")
