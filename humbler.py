@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import os
 import re
 import json
@@ -42,12 +43,24 @@ async def load_user_whitelist():
     whitelist_names = [user.get('name', '') for user in data]
     return '|'.join(map(re.escape, whitelist_names))
 
+def transform_line(line):
+    # Remove timestamp and [Server thread/INFO]: portion
+    line_without_info = re.sub(r'^\[[\d+:]*\] \[Server thread/INFO\]: ', '', line)
+
+    return line_without_info
+
 async def process_log_line(line):
     if line not in processed_lines:
-        print(f"Found matching line in log: {line.strip()}")
-        payload = {'content': line.strip()}
-        await write_to_discord_webhook(payload)
-        processed_lines.add(line)
+        transformed_line = transform_line(line)
+
+        # Check if the transformed line starts with any name from the whitelist
+        whitelist_names = await load_user_whitelist()
+        if any(transformed_line.lower().startswith(name.lower()) for name in whitelist_names):
+            print(f"Found matching line in log: {line.strip()}")
+            print(f"Sending the followig to Discord: {transformed_line.strip()}")
+            payload = {'content': transformed_line.strip()}
+            await write_to_discord_webhook(payload)
+            processed_lines.add(line)
 
 async def follow_log():
     global last_position, last_inode, last_size, processed_lines
