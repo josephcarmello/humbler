@@ -29,4 +29,4 @@ python3 humbler.py
 - Deal with whitelist.json not existing - some servers dont use those!
 - Add a log line transform - currently it grabs the entire line...but it only needs the pertinent data about the user
 - Attempt to ignore bot kills...(possibly deal with this by checking that the transformed line STARTS with one of the names in the whitelist???)
-
+- Add daemonize notes for PM2
