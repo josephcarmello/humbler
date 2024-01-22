@@ -58,7 +58,21 @@ async def process_log_line(line):
         if any(transformed_line.lower().startswith(name.lower()) for name in whitelist_names):
             print(f"Found matching line in log: {line.strip()}")
             print(f"Sending the followig to Discord: {transformed_line.strip()}")
-            payload = {'content': transformed_line.strip()}
+            #payload = {'content': transformed_line.strip()}
+            payload = {
+                "embeds": [
+                    {
+                        "type": "rich",
+                        "title": "Uh oh!",
+                        "description": transformed_line.strip(),
+                        "color": 0xb7ff00,
+                        "footer": {
+                            "text": "Brought to you by the Humbler gang."
+                        }
+                    }
+                ]
+            }
+
             await write_to_discord_webhook(payload)
             processed_lines.add(line)
 
