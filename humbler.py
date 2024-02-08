@@ -36,17 +36,16 @@ async def write_to_discord_webhook(content):
 async def load_death_messages():
     data = await read_json_file(json_death_messages)
     death_messages = data.get('deathMessages', [])
-    return '|'.join(map(re.escape, death_messages))
+    return [re.escape(msg) for msg in death_messages]
 
 async def load_user_whitelist():
     data = await read_json_file(json_user_whitelist)
     whitelist_names = [user.get('name', '') for user in data]
-    return '|'.join(map(re.escape, whitelist_names))
+    return [re.escape(name) for name in whitelist_names]
 
 def transform_line(line):
     # Remove timestamp and [Server thread/INFO]: portion
     line_without_info = re.sub(r'^\[[\d+:]*\] \[Server thread/INFO\]: ', '', line)
-
     return line_without_info
 
 async def process_log_line(line):
@@ -54,11 +53,10 @@ async def process_log_line(line):
         transformed_line = transform_line(line)
 
         # Check if the transformed line starts with any name from the whitelist
-        whitelist_names = await load_user_whitelist()
-        if any(transformed_line.lower().startswith(name.lower()) for name in whitelist_names):
+        whitelist_patterns = await load_user_whitelist()
+        if any(transformed_line.lower().startswith(name.lower()) for name in whitelist_patterns):
             print(f"Found matching line in log: {line.strip()}")
-            print(f"Sending the followig to Discord: {transformed_line.strip()}")
-            #payload = {'content': transformed_line.strip()}
+            print(f"Sending the following to Discord: {transformed_line.strip()}")
             payload = {
                 "embeds": [
                     {
@@ -98,13 +96,13 @@ async def follow_log():
                     await asyncio.sleep(0.1)
                     continue
 
-                death_messages_pattern = await load_death_messages()
-                whitelist_pattern = await load_user_whitelist()
+                death_messages_patterns = await load_death_messages()
+                whitelist_patterns = await load_user_whitelist()
 
                 for line in lines:
                     if (
-                        re.search(death_messages_pattern, line, re.IGNORECASE) and
-                        re.search(whitelist_pattern, line, re.IGNORECASE)
+                        any(re.search(pattern, line, re.IGNORECASE) for pattern in death_messages_patterns) and
+                        any(re.search(pattern, line, re.IGNORECASE) for pattern in whitelist_patterns)
                     ):
                         yield line
 
@@ -132,3 +130,4 @@ if __name__ == "__main__":
         asyncio.run(main())
     except KeyboardInterrupt:
         print("Script terminated.")
+
