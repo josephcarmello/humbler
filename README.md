@@ -1,4 +1,8 @@
+
+<p align="center" width="100%"><img width="20%" height="20%" src="https://github.com/josephcarmello/humbler/assets/14276892/2baf1a40-985b-4ea0-a966-8327ff2653a4" /></p>
+
 # humbler :smirk:
+
 A simple python script that reads a Minecraft log file, waits for your friends(or your) death, and posts them to discord for all to enjoy.
 
 ## Setup
