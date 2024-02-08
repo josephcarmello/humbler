@@ -29,9 +29,9 @@ If you have nodejs and nm installed, you can use a utility called `pm2` to help 
 You can install pm2 with the following:
 ```npm install pm2 -g```
 
-Once installed you will need to create an "ecosystem.json" file which will act as a configouration file for pm2 to know where your app lives and wfurther details about it.
+Once installed you will need to create an "ecosystem.json" file which will act as a configuration file for pm2 to know where your app lives and further details about it.
 
-En example ecosystem file that will live in your pm2 process start directory:
+An example ecosystem file that will live in your pm2 process start directory:
 ```
 module.exports = {
   apps : [{
