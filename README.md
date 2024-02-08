@@ -1,7 +1,12 @@
 # humbler :smirk:
-A simple python script that reads a Minecraft log file, waits for death messages, and posts them to a discord webhook.
+A simple python script that reads a Minecraft log file, waits for your friends(or your) death, and posts them to discord for all to enjoy.
 
 ## Setup
+
+### Container Details
+The humbler runs in conjunction to a minecraft server that is running via a `itzg/docker-minecraft-server` based container. 
+Log format might be standardized for minecraft, but anything customized from this container might not match your setup. 
+You may need to customize to your specific setup to get this working properly.
 
 ### Requirements.txt
 Make sure you install the necessary modules:
