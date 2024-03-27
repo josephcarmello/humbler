@@ -54,6 +54,12 @@ def transform_line(line):
     line_without_info = re.sub(r'^\[[\d+:]*\] \[Server thread/INFO\]: ', '', line)
     return line_without_info
 
+def humbled_response():
+    humbled_responses = asyncio.run(load_humbled_responses())
+    random_response = random.choice(humbled_responses)
+    return random_response
+
+
 async def process_log_line(line):
     if line not in processed_lines:
         transformed_line = transform_line(line)
@@ -67,7 +73,7 @@ async def process_log_line(line):
                 "embeds": [
                     {
                         "type": "rich",
-                        "title": "Uh oh!",
+                        "title": random_response.strip(),
                         "description": transformed_line.strip(),
                         "color": 0xb7ff00,
                         "footer": {
