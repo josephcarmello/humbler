@@ -43,7 +43,7 @@ async def load_death_messages():
 async def load_humbled_responses():
     data = await read_json_file(json_humbled_responses)
     humbled_responses = data.get('humbledResponses', [])
-    return [re.escape(response) for response in humbled_responses]
+    return random.choice(humbled_responses)
 
 async def load_user_whitelist():
     data = await read_json_file(json_user_whitelist)
@@ -55,12 +55,6 @@ def transform_line(line):
     line_without_info = re.sub(r'^\[[\d+:]*\] \[Server thread/INFO\]: ', '', line)
     return line_without_info
 
-def humbled_response():
-    humbled_responses = asyncio.run(load_humbled_responses())
-    random_response = random.choice(humbled_responses)
-    return random_response
-
-
 async def process_log_line(line):
     if line not in processed_lines:
         transformed_line = transform_line(line)
@@ -70,11 +64,12 @@ async def process_log_line(line):
         if any(transformed_line.lower().startswith(name.lower()) for name in whitelist_patterns):
             print(f"Found matching line in log: {line.strip()}")
             print(f"Sending the following to Discord: {transformed_line.strip()}")
+            humbled_response_text = await load_humbled_responses()
             payload = {
                 "embeds": [
                     {
                         "type": "rich",
-                        "title": humbled_response().strip(),
+                        "title": humbled_response_text.strip(),
                         "description": transformed_line.strip(),
                         "color": 0xb7ff00,
                         "footer": {
