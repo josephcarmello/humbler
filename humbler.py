@@ -2,6 +2,7 @@
 import os
 import re
 import json
+import random
 import asyncio
 import aiofiles
 from aiohttp import ClientSession
@@ -73,7 +74,7 @@ async def process_log_line(line):
                 "embeds": [
                     {
                         "type": "rich",
-                        "title": random_response.strip(),
+                        "title": humbled_response().strip(),
                         "description": transformed_line.strip(),
                         "color": 0xb7ff00,
                         "footer": {
