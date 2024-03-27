@@ -12,6 +12,7 @@ load_dotenv()
 discord_webhook_url = os.getenv('DISCORD_WEBHOOK_URL')
 json_death_messages = os.getenv('JSON_DEATH_MESSAGES')
 json_user_whitelist = os.getenv('JSON_USER_WHITELIST')
+json_humbled_responses = os.getenv('JSON_HUMBLED_RESPONSES')
 log_file_path = os.getenv('LOG_FILE_PATH')
 
 # Set debug flag (change to False to disable debug output)
@@ -37,6 +38,11 @@ async def load_death_messages():
     data = await read_json_file(json_death_messages)
     death_messages = data.get('deathMessages', [])
     return [re.escape(msg) for msg in death_messages]
+
+async def load_humbled_responses():
+    data = await read_json_file(json_humbled_responses)
+    humbled_responses = data.get('humbledResponses', [])
+    return [re.escape(response) for response in humbled_responses]
 
 async def load_user_whitelist():
     data = await read_json_file(json_user_whitelist)
