@@ -10,7 +10,7 @@ A simple python script that reads a Minecraft log file, waits for your friends(o
 ## Setup
 
 ### Minimum versions
-This was built with Python 3.11 and is being used with Minecraft 1.20 (Other versions may work, but I won't be troubleshooting those!) 
+This was built with Python 3.11 and is being used with Minecraft 1.21 (Other versions may work, but I won't be troubleshooting those!) 
 
 ### Container Details
 The humbler runs in conjunction to a minecraft server that is running via a `itzg/docker-minecraft-server` based container. 
