@@ -5,6 +5,7 @@ import json
 import random
 import asyncio
 import aiofiles
+import sqlite3
 from aiohttp import ClientSession
 from dotenv import load_dotenv
 
@@ -15,15 +16,36 @@ json_death_messages = os.getenv('JSON_DEATH_MESSAGES')
 json_user_whitelist = os.getenv('JSON_USER_WHITELIST')
 json_humbled_responses = os.getenv('JSON_HUMBLED_RESPONSES')
 log_file_path = os.getenv('LOG_FILE_PATH')
+db_file_path = os.getenv('DB_FILE_PATH', 'deaths.db')  # Default to 'deaths.db' if not provided
 
-# Set debug flag (change to False to disable debug output)
 debug = False
 
 last_position = 0
 last_inode = 0
 last_size = 0
-
 processed_lines = set()
+
+def initialize_database():
+    with sqlite3.connect(db_file_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS deaths (
+                username TEXT PRIMARY KEY,
+                death_count INTEGER DEFAULT 0
+            )
+        """)
+        conn.commit()
+
+async def increment_death_count(username):
+    with sqlite3.connect(db_file_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO deaths (username, death_count)
+            VALUES (?, 1)
+            ON CONFLICT(username) DO UPDATE SET death_count = death_count + 1
+        """, (username,))
+        cursor.execute("SELECT death_count FROM deaths WHERE username = ?", (username,))
+        return cursor.fetchone()[0]
 
 async def read_json_file(file_path):
     async with aiofiles.open(file_path, 'r') as file:
@@ -64,13 +86,16 @@ async def process_log_line(line):
         if any(transformed_line.lower().startswith(name.lower()) for name in whitelist_patterns):
             print(f"Found matching line in log: {line.strip()}")
             print(f"Sending the following to Discord: {transformed_line.strip()}")
+            username = transformed_line.split()[0]
+            death_count = await increment_death_count(username)
+
             humbled_response_text = await load_humbled_responses()
             payload = {
                 "embeds": [
                     {
                         "type": "rich",
                         "title": humbled_response_text.strip(),
-                        "description": transformed_line.strip(),
+                        "description": f"{transformed_line.strip()} (Deaths: {death_count})",
                         "color": 0xb7ff00,
                         "footer": {
                             "text": "Brought to you by the Humbler gang."
@@ -90,11 +115,11 @@ async def follow_log():
             current_size = os.stat(log_file_path).st_size
 
             if last_inode != current_inode or last_size > current_size:
-                # File has been rotated or truncated, reset position and processed lines
+                # File has been rotated or truncated
                 last_position = current_size
                 last_inode = current_inode
                 last_size = current_size
-                processed_lines = set()  # Reset processed lines
+                processed_lines = set()
                 await asyncio.sleep(1)  # Sleep to avoid rapid checking :(
 
             async with aiofiles.open(log_file_path, 'r') as log_file:
@@ -118,15 +143,15 @@ async def follow_log():
                 last_size = current_size
 
         except FileNotFoundError:
-            # Log file not found, reset position and processed lines
             last_position = 0
-            processed_lines = set()  # Reset processed lines
-            await asyncio.sleep(1)  # Sleep to avoid rapid checking - computer is fast
+            processed_lines = set()
+            await asyncio.sleep(1)
         except Exception as e:
             print(f"Error: {e}")
-            await asyncio.sleep(1)  # Sleep to avoid rapid checking
+            await asyncio.sleep(1)
 
 async def main():
+    initialize_database()  
     async for line in follow_log():
         if line.strip():
             if debug:
@@ -138,4 +163,3 @@ if __name__ == "__main__":
         asyncio.run(main())
     except KeyboardInterrupt:
         print("Script terminated.")
-
