@@ -4,6 +4,8 @@
 !deathMessages.json
 !humbledResponses.json
 !requirements.txt
+!sample.env
+!debugBots.json
 
 # Exclude git
 .git
