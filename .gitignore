@@ -164,6 +164,7 @@ cython_debug/
 
 
 #MY ignores
+*.db
 *.out
 *.err
 *.pid
