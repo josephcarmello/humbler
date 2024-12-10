@@ -1,0 +1,18 @@
+**
+
+!humbler.py
+!deathMessages.json
+!humbledResponses.json
+!requirements.txt
+
+# Exclude git
+.git
+.gitignore
+
+# Exclude sysfiles
+*.log
+*.err
+*.out
+*.pid
+logs/
+
