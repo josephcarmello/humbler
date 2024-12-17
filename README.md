@@ -3,7 +3,9 @@
 
 # humbler :smirk:
 
-A simple python script that reads a Minecraft log file, waits for your friends(or your) death, and posts them to discord for all to enjoy. Who will be the last member of the server to get humbled?!
+A simple python script that reads a Minecraft log file, waits for your friends(or your) death, and posts them to discord for all to enjoy. The humbler will also track each user's total deaths in a local sqlite db.
+
+Who will be the last member of the server to get humbled?!
 
 <p align="center" width="100%"><img src="https://github.com/josephcarmello/humbler/assets/14276892/8a7bdf5f-e477-4d24-880c-a969a480cc2a" /></p>
 
