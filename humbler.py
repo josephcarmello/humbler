@@ -88,6 +88,9 @@ def transform_line(line):
     return line_without_info
 
 async def process_log_line(line):
+    if "lost connection" in line.lower():
+        return #fuckin bots
+
     if line not in processed_lines:
         transformed_line = transform_line(line)
 
@@ -151,6 +154,9 @@ async def follow_log():
                 combined_patterns = whitelist_patterns + debug_bots
 
                 for line in lines:
+                    if "lost connection" in line.lower():
+                        continue #fuckin bots
+
                     if (
                         any(re.search(pattern, line, re.IGNORECASE) for pattern in death_messages_patterns) and
                         any(re.search(pattern, line, re.IGNORECASE) for pattern in combined_patterns)
