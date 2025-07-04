@@ -187,23 +187,23 @@ async def main():
 async def get_death_count(username):
     with sqlite3.connect(db_file_path) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT death_count FROM deaths WHERE username = ?", (username,))
+        cursor.execute("SELECT season_6 FROM deaths WHERE username = ?", (username,))
         result = cursor.fetchone()
         return result[0] if result else 0
 
 async def get_scoreboard():
     with sqlite3.connect(db_file_path) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT username, death_count FROM deaths ORDER BY death_count DESC")
+        cursor.execute("SELECT username, season_6 FROM deaths ORDER BY season_6 DESC")
         return cursor.fetchall()
 
 async def death_command(ctx, player_name):
     death_count = await get_death_count(player_name)
-    await ctx.send(f"{player_name} has died {death_count} times")
+    await ctx.send(f"{player_name} has died {death_count} times in Season 6")
 
 async def scoreboard_command(ctx):
     scoreboard = await get_scoreboard()
-    response = "Scoreboard:\n"
+    response = "Season 6 Scoreboard:\n"
     for i, (username, deaths) in enumerate(scoreboard, 1):
         response += f"{i}. {username}: {deaths} deaths\n"
     await ctx.send(response)
