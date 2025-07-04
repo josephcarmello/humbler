@@ -178,7 +178,7 @@ async def follow_log():
             print(f"Error: {e}")
             await asyncio.sleep(1)
 
-async def main():
+async def log_processor():
     initialize_database()
     async for line in follow_log():
         if line.strip():
@@ -252,11 +252,14 @@ async def init_discord_bot():
         
     await bot.start(discord_token)
 
+async def main():
+    await asyncio.gather(
+        log_processor(),
+        init_discord_bot()
+    )
+
 if __name__ == "__main__":
     try:
-        asyncio.run(asyncio.gather(
-            main(),
-            init_discord_bot()
-        ))
+        asyncio.run(main())
     except KeyboardInterrupt:
-        print("Script terminated.")
+        print("Script terminated")
