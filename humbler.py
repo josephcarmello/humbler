@@ -218,7 +218,7 @@ async def init_discord_bot():
 
     intents = discord.Intents.default()
     intents.message_content = True
-    bot = commands.Bot(intents=intents)
+    bot = commands.Bot(command_prefix="?????", intents=intents)
     humbler_group = app_commands.Group(name="humbler", description="Commands for the Humbler bot")
 
     @bot.event
