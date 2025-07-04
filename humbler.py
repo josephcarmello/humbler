@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+minecraft_season = os.getenv('MINECRAFT_SEASON')
 discord_webhook_url = os.getenv('DISCORD_WEBHOOK_URL')
 json_death_messages = os.getenv('JSON_DEATH_MESSAGES')
 json_user_whitelist = os.getenv('JSON_USER_WHITELIST')
@@ -32,7 +33,8 @@ def initialize_database():
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS deaths (
                 username TEXT PRIMARY KEY,
-                death_count INTEGER DEFAULT 0
+                death_count INTEGER DEFAULT 0,
+                season_6 INTEGER DEFAULT 0
             )
         """)
         conn.commit()
@@ -41,12 +43,14 @@ async def increment_death_count(username):
     with sqlite3.connect(db_file_path) as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO deaths (username, death_count)
-            VALUES (?, 1)
-            ON CONFLICT(username) DO UPDATE SET death_count = death_count + 1
+            INSERT INTO deaths (username, death_count, season_6)
+            VALUES (?, 1, 1)
+            ON CONFLICT(username) DO UPDATE SET 
+                death_count = death_count + 1,
+                season_6 = season_6 + 1
         """, (username,))
-        cursor.execute("SELECT death_count FROM deaths WHERE username = ?", (username,))
-        return cursor.fetchone()[0]
+        cursor.execute("SELECT death_count, season_6 FROM deaths WHERE username = ?", (username,))
+        return cursor.fetchone()
 
 async def read_json_file(file_path):
     async with aiofiles.open(file_path, 'r') as file:
@@ -96,8 +100,9 @@ async def process_log_line(line):
         if any(transformed_line.lower().startswith(name.lower()) for name in combined_patterns):
             print(f"Found matching line in log: {line.strip()}")
             print(f"Sending the following to Discord: {transformed_line.strip()}")
+
             username = transformed_line.split()[0]
-            death_count = await increment_death_count(username)
+            death_count, season_count = await increment_death_count(username)
 
             humbled_response_text = await load_humbled_responses()
             payload = {
@@ -105,7 +110,7 @@ async def process_log_line(line):
                     {
                         "type": "rich",
                         "title": humbled_response_text.strip(),
-                        "description": f"{transformed_line.strip()} (Deaths: {death_count})",
+                        "description": f"{transformed_line.strip()} (Season 6 Deaths: {season_count}, Total Deaths: {death_count})",
                         "color": 0xb7ff00,
                         "footer": {
                             "text": "Brought to you by the Humbler gang."
