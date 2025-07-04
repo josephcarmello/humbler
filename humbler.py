@@ -8,6 +8,8 @@ import aiofiles
 import sqlite3
 from aiohttp import ClientSession
 from dotenv import load_dotenv
+import discord
+from discord.ext import commands
 
 load_dotenv()
 
@@ -175,15 +177,61 @@ async def follow_log():
             await asyncio.sleep(1)
 
 async def main():
-    initialize_database()  
+    initialize_database()
     async for line in follow_log():
         if line.strip():
             if debug:
                 print(f"Debug: Matched line - {line.strip()}")
             await process_log_line(line)
 
+async def get_death_count(username):
+    with sqlite3.connect(db_file_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT death_count FROM deaths WHERE username = ?", (username,))
+        result = cursor.fetchone()
+        return result[0] if result else 0
+
+async def get_scoreboard():
+    with sqlite3.connect(db_file_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT username, death_count FROM deaths ORDER BY death_count DESC")
+        return cursor.fetchall()
+
+async def death_command(ctx, player_name):
+    death_count = await get_death_count(player_name)
+    await ctx.send(f"{player_name} has died {death_count} times")
+
+async def scoreboard_command(ctx):
+    scoreboard = await get_scoreboard()
+    response = "Scoreboard:\n"
+    for i, (username, deaths) in enumerate(scoreboard, 1):
+        response += f"{i}. {username}: {deaths} deaths\n"
+    await ctx.send(response)
+
+async def init_discord_bot():
+    discord_token = os.getenv('DISCORD_TOKEN')
+    if not discord_token:
+        print("Error: DISCORD_TOKEN environment variable not set")
+        return
+
+    intents = discord.Intents.default()
+    intents.message_content = True
+    bot = commands.Bot(command_prefix='/', intents=intents)
+
+    @bot.event
+    async def on_ready():
+        print(f'Logged in as {bot.user.name}')
+
+    bot.command(name='death')(death_command)
+    bot.command(name='scoreboard')(scoreboard_command)
+
+    await bot.start(discord_token)
+
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        asyncio.run(asyncio.gather(
+            main(),
+            init_discord_bot()
+        ))
     except KeyboardInterrupt:
         print("Script terminated.")
