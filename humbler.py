@@ -9,6 +9,7 @@ import sqlite3
 import aiofiles
 import discord
 from aiohttp import ClientSession
+from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -217,15 +218,38 @@ async def init_discord_bot():
 
     intents = discord.Intents.default()
     intents.message_content = True
-    bot = commands.Bot(command_prefix='/', intents=intents)
+    bot = commands.Bot(intents=intents)
+    humbler_group = app_commands.Group(name="humbler", description="Commands for the Humbler bot")
 
     @bot.event
     async def on_ready():
         print(f'Logged in as {bot.user.name}')
+        bot.tree.add_command(humbler_group)
+        try:
+            synced = await bot.tree.sync()
+            print(f"Synced {len(synced)} command(s)")
+        except Exception as e:
+            print(f"Failed to sync commands: {e}")
 
-    bot.command(name='death')(death_command)
-    bot.command(name='scoreboard')(scoreboard_command)
+    @humbler_group.command(name="deaths", description="Check a player's death count for the current season")
+    @app_commands.describe(player_name="The Minecraft username to look up")
+    async def deaths_subcommand(interaction, player_name):
+        death_count = await get_death_count(player_name)
+        await interaction.response.send_message(f"{player_name} has died {death_count} time(s) in Season 6")
 
+    @humbler_group.command(name="scoreboard", description="Display the death scoreboard for the current season")
+    async def scoreboard_subcommand(interaction):
+        scoreboard = await get_scoreboard()
+        if not scoreboard:
+            await interaction.response.send_message("The scoreboard is empty! No one has been humbled yet")
+            return
+
+        response = "Season 6 Humbler Scoreboard\n"
+        for i, (username, deaths) in enumerate(scoreboard, 1):
+            response += f"{i}. {username}: {deaths} deaths\n"
+
+        await interaction.response.send_message(response)
+        
     await bot.start(discord_token)
 
 if __name__ == "__main__":
