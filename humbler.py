@@ -14,6 +14,7 @@ load_dotenv()
 discord_webhook_url = os.getenv('DISCORD_WEBHOOK_URL')
 json_death_messages = os.getenv('JSON_DEATH_MESSAGES')
 json_user_whitelist = os.getenv('JSON_USER_WHITELIST')
+json_debug_bots = os.getenv('JSON_DEBUG_BOTS')
 json_humbled_responses = os.getenv('JSON_HUMBLED_RESPONSES')
 log_file_path = os.getenv('LOG_FILE_PATH')
 db_file_path = os.getenv('DB_FILE_PATH', 'deaths.db')  # Default to 'deaths.db' if not provided
@@ -72,6 +73,11 @@ async def load_user_whitelist():
     whitelist_names = [user.get('name', '') for user in data]
     return [re.escape(name) for name in whitelist_names]
 
+async def load_debug_bots():
+    data = await read_json_file(json_debug_bots)
+    debug_bots = [user.get('name', '') for user in data]
+    return [re.escape(name) for name in debug_bots]
+
 def transform_line(line):
     # Remove timestamp and [Server thread/INFO]: portion
     line_without_info = re.sub(r'^\[[\d+:]*\] \[Server thread/INFO\]: ', '', line)
@@ -83,7 +89,11 @@ async def process_log_line(line):
 
         # Check if the transformed line starts with any name from the whitelist
         whitelist_patterns = await load_user_whitelist()
-        if any(transformed_line.lower().startswith(name.lower()) for name in whitelist_patterns):
+        debug_bots = await load_debug_bots()
+
+        combined_patterns = whitelist_patterns + debug_bots
+
+        if any(transformed_line.lower().startswith(name.lower()) for name in combined_patterns):
             print(f"Found matching line in log: {line.strip()}")
             print(f"Sending the following to Discord: {transformed_line.strip()}")
             username = transformed_line.split()[0]
@@ -131,11 +141,14 @@ async def follow_log():
 
                 death_messages_patterns = await load_death_messages()
                 whitelist_patterns = await load_user_whitelist()
+                debug_bots = await load_debug_bots()
+
+                combined_patterns = whitelist_patterns + debug_bots
 
                 for line in lines:
                     if (
                         any(re.search(pattern, line, re.IGNORECASE) for pattern in death_messages_patterns) and
-                        any(re.search(pattern, line, re.IGNORECASE) for pattern in whitelist_patterns)
+                        any(re.search(pattern, line, re.IGNORECASE) for pattern in combined_patterns)
                     ):
                         yield line
 
