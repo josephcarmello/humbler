@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-import os
-import re
-import json
-import random
 import asyncio
-import aiofiles
+import json
+import os
+import random
+import re
 import sqlite3
-from aiohttp import ClientSession
-from dotenv import load_dotenv
+
+import aiofiles
 import discord
+from aiohttp import ClientSession
 from discord.ext import commands
+from dotenv import load_dotenv
 
 load_dotenv()
 
