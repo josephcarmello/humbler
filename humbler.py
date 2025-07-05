@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-import os
-import re
-import json
-import random
 import asyncio
-import aiofiles
+import json
+import os
+import random
+import re
 import sqlite3
+
+import aiofiles
+import discord
 from aiohttp import ClientSession
+from discord import app_commands
+from discord.ext import commands
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -174,16 +178,88 @@ async def follow_log():
             print(f"Error: {e}")
             await asyncio.sleep(1)
 
-async def main():
-    initialize_database()  
+async def log_processor():
+    initialize_database()
     async for line in follow_log():
         if line.strip():
             if debug:
                 print(f"Debug: Matched line - {line.strip()}")
             await process_log_line(line)
 
+async def get_death_count(username):
+    with sqlite3.connect(db_file_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT season_6 FROM deaths WHERE username = ?", (username,))
+        result = cursor.fetchone()
+        return result[0] if result else 0
+
+async def get_scoreboard():
+    with sqlite3.connect(db_file_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT username, season_6 FROM deaths ORDER BY season_6 DESC")
+        return cursor.fetchall()
+
+async def death_command(ctx, player_name):
+    death_count = await get_death_count(player_name)
+    await ctx.send(f"{player_name} has died {death_count} times in Season 6")
+
+async def scoreboard_command(ctx):
+    scoreboard = await get_scoreboard()
+    response = "Season 6 Scoreboard:\n"
+    for i, (username, deaths) in enumerate(scoreboard, 1):
+        response += f"{i}. {username}: {deaths} deaths\n"
+    await ctx.send(response)
+
+async def init_discord_bot():
+    discord_token = os.getenv('DISCORD_TOKEN')
+    if not discord_token:
+        print("Error: DISCORD_TOKEN environment variable not set")
+        return
+
+    intents = discord.Intents.default()
+    intents.message_content = True
+    bot = commands.Bot(command_prefix="?????", intents=intents)
+    humbler_group = app_commands.Group(name="humbler", description="Commands for the Humbler bot")
+
+    @bot.event
+    async def on_ready():
+        print(f'Logged in as {bot.user.name}')
+        bot.tree.add_command(humbler_group)
+        try:
+            synced = await bot.tree.sync()
+            print(f"Synced {len(synced)} command(s)")
+        except Exception as e:
+            print(f"Failed to sync commands: {e}")
+
+    @humbler_group.command(name="deaths", description="Check a player's death count for the current season")
+    @app_commands.describe(player_name="The Minecraft username to look up")
+    async def deaths_subcommand(interaction: discord.Interaction, player_name: str):
+        death_count = await get_death_count(player_name)
+        await interaction.response.send_message(f"{player_name} has died {death_count} time(s) in Season 6")
+
+    @humbler_group.command(name="scoreboard", description="Display the death scoreboard for the current season")
+    async def scoreboard_subcommand(interaction: discord.Interaction):
+        scoreboard = await get_scoreboard()
+        if not scoreboard:
+            await interaction.response.send_message("The scoreboard is empty! No one has been humbled yet")
+            return
+
+        response = "Season 6 Humbler Scoreboard\n"
+        for i, (username, deaths) in enumerate(scoreboard, 1):
+            response += f"{i}. {username}: {deaths} deaths\n"
+
+        await interaction.response.send_message(response)
+        
+    await bot.start(discord_token)
+
+async def main():
+    await asyncio.gather(
+        log_processor(),
+        init_discord_bot()
+    )
+
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("Script terminated.")
+        print("Script terminated")
