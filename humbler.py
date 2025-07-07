@@ -31,6 +31,8 @@ last_inode = 0
 last_size = 0
 processed_lines = set()
 
+official_bots = ["humblebot1"] # Add more bots here as we want to remove them from various displays
+
 def initialize_database():
     with sqlite3.connect(db_file_path) as conn:
         cursor = conn.cursor()
@@ -197,7 +199,8 @@ async def get_scoreboard():
     with sqlite3.connect(db_file_path) as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT username, season_6 FROM deaths ORDER BY season_6 DESC")
-        return cursor.fetchall()
+        scoreboard = cursor.fetchall()
+        return [(username, deaths) for username, deaths in scoreboard if username.lower() in official_bots]
 
 async def death_command(ctx, player_name):
     death_count = await get_death_count(player_name)
@@ -207,7 +210,7 @@ async def scoreboard_command(ctx):
     scoreboard = await get_scoreboard()
     response = "Season 6 Scoreboard:\n"
     for i, (username, deaths) in enumerate(scoreboard, 1):
-        response += f"{i}. {username}: {deaths} deaths\n"
+        response += f"{i}. **{username}**: {deaths} deaths\n"
     await ctx.send(response)
 
 async def init_discord_bot():
@@ -246,7 +249,7 @@ async def init_discord_bot():
 
         response = "Season 6 Humbler Scoreboard\n"
         for i, (username, deaths) in enumerate(scoreboard, 1):
-            response += f"{i}. {username}: {deaths} deaths\n"
+            response += f"{i}. **{username}**: {deaths} deaths\n"
 
         await interaction.response.send_message(response)
         
