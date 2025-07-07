@@ -31,7 +31,6 @@ last_inode = 0
 last_size = 0
 processed_lines = set()
 
-official_bots = ["humblebot1"] # Add more bots here as we want to remove them from various displays
 
 def initialize_database():
     with sqlite3.connect(db_file_path) as conn:
@@ -200,7 +199,23 @@ async def get_scoreboard():
         cursor = conn.cursor()
         cursor.execute("SELECT username, season_6 FROM deaths ORDER BY season_6 DESC")
         scoreboard = cursor.fetchall()
-        return [(username, deaths) for username, deaths in scoreboard if username.lower() in official_bots]
+
+    debug_bots = await load_debug_bots()
+    debug_bot_names = {normalize_username(name) for name in debug_bots}
+
+    if not scoreboard:
+        return []
+
+    filtered_scoreboard = [
+        (username, deaths)
+        for username, deaths in scoreboard
+        if normalize_username(username) not in debug_bot_names
+    ]
+
+    return filtered_scoreboard
+
+async def normalize_username(username: str):
+    return re.sub(r'\\', '', username).lower()
 
 async def death_command(ctx, player_name):
     death_count = await get_death_count(player_name)
