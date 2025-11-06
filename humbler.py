@@ -233,12 +233,12 @@ async def init_discord_bot():
 
     @humbler_group.command(name="deaths", description="Check a player's death count for the current season")
     @app_commands.describe(player_name="The Minecraft username to look up")
-    async def deaths_subcommand(interaction, player_name):
+    async def deaths_subcommand(interaction: discord.Interaction, player_name: str):
         death_count = await get_death_count(player_name)
         await interaction.response.send_message(f"{player_name} has died {death_count} time(s) in Season 6")
 
     @humbler_group.command(name="scoreboard", description="Display the death scoreboard for the current season")
-    async def scoreboard_subcommand(interaction):
+    async def scoreboard_subcommand(interaction: discord.Interaction):
         scoreboard = await get_scoreboard()
         if not scoreboard:
             await interaction.response.send_message("The scoreboard is empty! No one has been humbled yet")
