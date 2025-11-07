@@ -279,6 +279,20 @@ async def init_discord_bot():
         except Exception as e:
             print(f"Failed to sync commands: {e}")
 
+    # --- UPDATED SECTION STARTS HERE ---
+    async def load_whitelist_players():
+        """Load player names from the whitelist JSON file."""
+        if not json_user_whitelist or not os.path.exists(json_user_whitelist):
+            print(f"⚠️  Whitelist file not found: {json_user_whitelist}")
+            return []
+        try:
+            async with aiofiles.open(json_user_whitelist, "r") as f:
+                data = json.loads(await f.read())
+                return [entry.get("name", "") for entry in data if "name" in entry]
+        except Exception as e:
+            print(f"⚠️  Error loading whitelist: {e}")
+            return []
+
     @humbler_group.command(name="deaths", description="Check a player's death count for the current season")
     @app_commands.describe(player_name="The Minecraft username to look up")
     async def deaths_subcommand(interaction: discord.Interaction, player_name: str):
@@ -286,6 +300,16 @@ async def init_discord_bot():
         await interaction.response.send_message(
             f"{player_name} has died {death_count} time(s) in Season {minecraft_season}"
         )
+
+    @deaths_subcommand.autocomplete("player_name")
+    async def deaths_autocomplete(interaction: discord.Interaction, current: str):
+        """Autocomplete Minecraft usernames from the whitelist file."""
+        players = await load_whitelist_players()
+        if not current:
+            return [app_commands.Choice(name=p, value=p) for p in players[:25]]
+        matches = [p for p in players if current.lower() in p.lower()]
+        return [app_commands.Choice(name=p, value=p) for p in matches[:25]]
+    # --- UPDATED SECTION ENDS HERE ---
 
     @humbler_group.command(name="scoreboard", description="Display the death scoreboard for the current season")
     async def scoreboard_subcommand(interaction: discord.Interaction):
