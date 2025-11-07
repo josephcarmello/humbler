@@ -16,6 +16,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 minecraft_season = os.getenv('MINECRAFT_SEASON')
+if not minecraft_season:
+        raise ValueError("MINECRAFT_SEASON environment variable is not set")
 discord_webhook_url = os.getenv('DISCORD_WEBHOOK_URL')
 json_death_messages = os.getenv('JSON_DEATH_MESSAGES')
 json_user_whitelist = os.getenv('JSON_USER_WHITELIST')
@@ -23,7 +25,7 @@ json_debug_bots = os.getenv('JSON_DEBUG_BOTS')
 json_humbled_responses = os.getenv('JSON_HUMBLED_RESPONSES')
 log_file_path = os.getenv('LOG_FILE_PATH')
 db_file_path = os.getenv('DB_FILE_PATH', 'deaths.db')  # Default to 'deaths.db' if not provided
-
+season_column = f"season_{minecraft_season}"
 debug = False
 
 last_position = 0
@@ -35,11 +37,11 @@ processed_lines = set()
 def initialize_database():
     with sqlite3.connect(db_file_path) as conn:
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(f"""
             CREATE TABLE IF NOT EXISTS deaths (
                 username TEXT PRIMARY KEY,
                 death_count INTEGER DEFAULT 0,
-                season_6 INTEGER DEFAULT 0
+                {season_column} INTEGER DEFAULT 0
             )
         """)
         conn.commit()
@@ -47,14 +49,14 @@ def initialize_database():
 async def increment_death_count(username):
     with sqlite3.connect(db_file_path) as conn:
         cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO deaths (username, death_count, season_6)
+        cursor.execute(f"""
+            INSERT INTO deaths (username, death_count, {season_column})
             VALUES (?, 1, 1)
             ON CONFLICT(username) DO UPDATE SET 
                 death_count = death_count + 1,
-                season_6 = season_6 + 1
+                {season_column} = {season_column} + 1
         """, (username,))
-        cursor.execute("SELECT death_count, season_6 FROM deaths WHERE username = ?", (username,))
+        cursor.execute(f"SELECT death_count, {season_column} FROM deaths WHERE username = ?", (username,))
         return cursor.fetchone()
 
 async def read_json_file(file_path):
@@ -190,14 +192,14 @@ async def log_processor():
 async def get_death_count(username):
     with sqlite3.connect(db_file_path) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT season_6 FROM deaths WHERE username = ?", (username,))
+        cursor.execute(f"SELECT {season_column} FROM deaths WHERE username = ?", (username,))
         result = cursor.fetchone()
         return result[0] if result else 0
 
 async def get_scoreboard():
     with sqlite3.connect(db_file_path) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT username, season_6 FROM deaths ORDER BY season_6 DESC")
+        cursor.execute(f"SELECT username, {season_column} FROM deaths ORDER BY {season_column} DESC")
         scoreboard = cursor.fetchall()
 
     debug_bots = await load_debug_bots()
