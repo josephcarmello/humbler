@@ -34,7 +34,6 @@ db_file_path = os.getenv("DB_FILE_PATH", "deaths.db")
 season_column = f"season_{minecraft_season}"
 debug = False
 
-# State variables
 last_position = 0
 last_inode = 0
 last_size = 0
@@ -279,7 +278,6 @@ async def init_discord_bot():
         except Exception as e:
             print(f"Failed to sync commands: {e}")
 
-    # --- UPDATED SECTION STARTS HERE ---
     async def load_whitelist_players():
         """Load player names from the whitelist JSON file."""
         if not json_user_whitelist or not os.path.exists(json_user_whitelist):
@@ -309,7 +307,6 @@ async def init_discord_bot():
             return [app_commands.Choice(name=p, value=p) for p in players[:25]]
         matches = [p for p in players if current.lower() in p.lower()]
         return [app_commands.Choice(name=p, value=p) for p in matches[:25]]
-    # --- UPDATED SECTION ENDS HERE ---
 
     @humbler_group.command(name="scoreboard", description="Display the death scoreboard for the current season")
     async def scoreboard_subcommand(interaction: discord.Interaction):
