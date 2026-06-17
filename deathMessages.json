@@ -7,7 +7,7 @@
     "drowned",
     "burned",
     "experienced kinetic energy",
-    "fell off a",
+    "fell off",
     "fell while",
     "fall out of the water",
     "fell from a high place",
@@ -15,9 +15,11 @@
     "fell out of the world",
     "fell too far and was finished by",
     "froze to death",
+    "frozen to death",
     "hit the ground too hard",
     "killed by",
     "left the confines",
+    "not just the floor is lava",
     "slain by",
     "speared by",
     "suffocated",
@@ -41,6 +43,7 @@
     "was roasted in dragon breath",
     "was shot",
     "was skewered",
+    "was smashed",
     "was squashed",
     "was squished",
     "was starved to death while trying to escape",
@@ -49,6 +52,7 @@
     "was withered away",
     "went off with a bang",
     "went up in flames",
-    "withered away" 
+    "withered away"
   ]
 }
+
